@@ -10,6 +10,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.ForkJoinPool;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class CheckoutServiceTest {
@@ -20,6 +22,7 @@ class CheckoutServiceTest {
     @BeforeAll
     static void getNoOfCores(){
         System.out.println("Number of cores: " + Runtime.getRuntime().availableProcessors());
+        System.out.println("Parallelism: " + ForkJoinPool.getCommonPoolParallelism());
     }
 
     @Test
@@ -31,6 +34,7 @@ class CheckoutServiceTest {
         //then
         assertNotNull(checkoutResponse, "Checkout respose is null");
         assertEquals(CheckoutStatus.SUCCESS, checkoutResponse.getCheckoutStatus(), "Checkout status needs to be success");
+        assertTrue(checkoutResponse.getFinalRate() > 0, "Final rate needs to be greater than zero.");
     }
 
     @Test
@@ -49,6 +53,19 @@ class CheckoutServiceTest {
     void checkout25Items() {
         //given
         Cart cart = DataSet.createCart(25);
+        //when
+        CheckoutResponse checkoutResponse = checkoutService.checkOut(cart);
+        //then
+        assertNotNull(checkoutResponse, "Checkout respose is null");
+        assertEquals(CheckoutStatus.FAILURE, checkoutResponse.getCheckoutStatus(), "Checkout status needs to be failure");
+    }
+
+    @Test
+    @DisplayName("Modify parallelism")
+    void modifyParallelism() {
+        //given
+        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "50");
+        Cart cart = DataSet.createCart(100);
         //when
         CheckoutResponse checkoutResponse = checkoutService.checkOut(cart);
         //then
