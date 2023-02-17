@@ -24,4 +24,10 @@ public class InventoryService {
         });
 
     }
+
+    public Inventory retreiveInventory(ProductOption productOption){
+        delay(500);
+        return Inventory.builder()
+                .count(2).build();
+    }
 }
