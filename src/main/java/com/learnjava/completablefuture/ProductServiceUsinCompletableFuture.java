@@ -15,7 +15,6 @@ import static com.learnjava.util.LoggerUtil.log;
 public class ProductServiceUsinCompletableFuture {
     private ProductInfoService productInfoService;
     private ReviewService reviewService;
-
     private InventoryService inventoryService;
 
     public ProductServiceUsinCompletableFuture(ProductInfoService productInfoService, ReviewService reviewService) {
@@ -61,10 +60,18 @@ public class ProductServiceUsinCompletableFuture {
                                                                                             productInfo.setProductOptions(updateInventory(productInfo));
                                                                                             return productInfo;
                                                                                         });
-        CompletableFuture<Review> reviewCompletableFuture = CompletableFuture.supplyAsync(() -> reviewService.retrieveReviews(productId));
+        CompletableFuture<Review> reviewCompletableFuture = CompletableFuture
+                .supplyAsync(() -> reviewService.retrieveReviews(productId))
+                .exceptionally(exception -> {
+                    log("Exception in reviewService: " + exception.getMessage());
+                    return Review.builder().noOfReviews(0).overallRating(0d).build();
+                });
 
         Product product = productInfoCompletableFuture
                 .thenCombine(reviewCompletableFuture, (productFutureResult, reviewFutureResult) -> new Product(productId, productFutureResult, reviewFutureResult))
+                .whenComplete((product1, throwable) -> {
+                    log("Inside whenComplete product: " + product1 + " exception: " + throwable);
+                })
                 .join();
 
         stopWatch.stop();
@@ -89,6 +96,11 @@ public class ProductServiceUsinCompletableFuture {
                 .stream()
                 .map(productOption -> {
                     return CompletableFuture.supplyAsync(() -> inventoryService.retreiveInventory(productOption))
+                            .exceptionally((exception) -> {
+                                log("Exception in inventory service: " + exception.getMessage());
+                                return Inventory.builder()
+                                        .count(1).build();
+                            })
                             .thenApply(inventory -> {
                                 productOption.setInventory(inventory);
                                 return productOption;

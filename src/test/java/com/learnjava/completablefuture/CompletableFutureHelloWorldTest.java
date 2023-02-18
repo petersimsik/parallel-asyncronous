@@ -69,6 +69,19 @@ class CompletableFutureHelloWorldTest {
     }
 
     @Test
+    void helloWorldThreeAsyncCallsCustomThreadPool() {
+        //given
+        CompletableFutureHelloWorld helloWorldFuture = new CompletableFutureHelloWorld(new HelloWorldService());
+
+        //when
+        String result = helloWorldFuture.helloWorldThreeAsyncCallsCustomPool();
+
+        //then
+        assertEquals("HELLO WORLD! HI COMPLETABLEFUTURE!", result);
+        assertNotEquals("HELLO aWORLD! HI COMPLETABLEFUTURE!", result);
+    }
+
+    @Test
     void helloWorld4AsyncCalls() {
         //given
         CompletableFutureHelloWorld helloWorldFuture = new CompletableFutureHelloWorld(new HelloWorldService());

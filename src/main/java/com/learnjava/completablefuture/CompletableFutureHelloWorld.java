@@ -3,6 +3,8 @@ package com.learnjava.completablefuture;
 import com.learnjava.service.HelloWorldService;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.learnjava.util.CommonUtil.*;
 import static com.learnjava.util.LoggerUtil.log;
@@ -99,11 +101,36 @@ public class CompletableFutureHelloWorld {
 
     }
 
+    public String helloWorldThreeAsyncCallsCustomPool() {
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
-    public static void main(String[] args) {
+        startTimer();
 
+        CompletableFuture<String> hello = CompletableFuture.supplyAsync(() -> helloWorldService.hello(), executorService);
+        CompletableFuture<String> world = CompletableFuture.supplyAsync(() -> helloWorldService.world(), executorService);
+        CompletableFuture<String> hi = CompletableFuture.supplyAsync(() -> {
+            log("inside hi");
+            delay(100);
+            return " Hi CompletableFuture!";
+        }, executorService);
 
-        log("Done");
-        //delay(2000);
+        String result = hello
+                .thenCombine(world, (previous, current) -> {
+                    log("inside thenCombine1");
+                    return previous + current;
+                })
+                .thenCombine(hi, (previous, current) -> {
+                    log("inside thenCombine2");
+                    return previous + current;
+                })
+                .thenApply(s -> {
+                    log("inside thenApply");
+                    return s.toUpperCase();
+                })
+                .join();
+
+        timeTaken();
+
+        return result;
     }
 }
